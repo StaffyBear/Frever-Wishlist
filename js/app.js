@@ -1,96 +1,21 @@
 import { supabase } from "./supabase.js";
 import { requireLogin, redirectIfLoggedIn, setupLoginForm, setupRegisterForm, signOut } from "./auth.js";
 import { showMessage, formatMoney, generateCode } from "./ui.js";
-
-const page=document.body.dataset.page;
+const page=document.body.dataset.page;let currentWishlist=null;let currentGifts=[];
 if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-worker.js").catch(()=>{})}
-if(page==="index")redirectIfLoggedIn();
-if(page==="login"){redirectIfLoggedIn();setupLoginForm()}
-if(page==="register"){redirectIfLoggedIn();setupRegisterForm()}
+if(page==="index")redirectIfLoggedIn();if(page==="login"){redirectIfLoggedIn();setupLoginForm()}if(page==="register"){redirectIfLoggedIn();setupRegisterForm()}
 if(["dashboard","wishlists","wishlist","admin","purchases","profile"].includes(page)){requireLogin().then(user=>{if(!user)return;const el=document.querySelector("[data-user-email]");if(el)el.textContent=user.email})}
 const logoutBtn=document.getElementById("logoutBtn");if(logoutBtn)logoutBtn.addEventListener("click",signOut);
-
-async function loadWishlists(){
- const list=document.getElementById("wishlistList");if(!list)return;
- const{data,error}=await supabase.from("wishlists").select("*").order("created_at",{ascending:false});
- if(error){list.innerHTML=`<div class="card small-text">${error.message}</div>`;return}
- if(!data||data.length===0){list.innerHTML=`<div class="card small-text">No wishlists yet. Create one in Admin.</div>`;return}
- list.innerHTML=data.map(w=>`<a class="menu-tile" href="wishlist.html?id=${w.id}"><div class="menu-icon">🎁</div><div><h3>${w.person_name}</h3><p>Wishlist code: ${w.wishlist_code}</p></div></a>`).join("");
-}
-
-async function loadWishlistName(){
- const title=document.getElementById("wishlistTitle");if(!title)return;
- const id=new URLSearchParams(window.location.search).get("id");if(!id)return;
- const{data}=await supabase.from("wishlists").select("*").eq("id",id).single();
- if(data)title.textContent=`${data.person_name}'s Wishlist`;
-}
-
-async function loadGifts(){
- const list=document.getElementById("giftList");if(!list)return;
- const id=new URLSearchParams(window.location.search).get("id");
- let q=supabase.from("gifts").select("*").order("created_at",{ascending:false});
- if(id)q=q.eq("wishlist_id",id);
- const{data,error}=await q;
- if(error){list.innerHTML=`<div class="card small-text">${error.message}</div>`;return}
- if(!data||data.length===0){list.innerHTML=`<div class="card small-text">No gifts yet. Add gift ideas in Admin.</div>`;return}
- list.innerHTML=data.map(g=>`<article class="gift-card"><div class="gift-image">${g.image_url?`<img src="${g.image_url}" alt="">`:"🎁"}</div><div><h3>${g.name}</h3><p class="small-text">${formatMoney(g.cost)} · Qty ${g.quantity||1}</p>${g.gift_url?`<p class="small-text"><a href="${g.gift_url}" target="_blank" rel="noopener">Open gift link</a></p>`:""}<div class="meta"><span class="pill">${g.priority||"N/A"}</span><span class="pill ${(g.status||"Available").toLowerCase()}">${g.status||"Available"}</span></div></div></article>`).join("");
-}
-
-async function populateWishlistDropdown(){
- const dd=document.getElementById("giftWishlist");if(!dd)return;
- const{data,error}=await supabase.from("wishlists").select("*").order("person_name",{ascending:true});
- if(error){dd.innerHTML=`<option value="">Unable to load wishlists</option>`;return}
- if(!data||data.length===0){dd.innerHTML=`<option value="">Create a wishlist first</option>`;return}
- dd.innerHTML=`<option value="">Select a wishlist</option>`+data.map(w=>`<option value="${w.id}">${w.person_name} (${w.wishlist_code})</option>`).join("");
-}
-
-async function loadPurchases(){
- const list=document.getElementById("purchaseList");if(!list)return;
- const user=await requireLogin();if(!user)return;
- const{data,error}=await supabase.from("purchases").select("*, gifts(name, cost), wishlists(person_name)").eq("buyer_id",user.id).order("purchased_at",{ascending:false});
- if(error){list.innerHTML=`<div class="card small-text">${error.message}</div>`;return}
- if(!data||data.length===0){list.innerHTML=`<div class="card small-text">No purchases yet.</div>`;return}
- list.innerHTML=data.map(i=>`<article class="card"><h3>${i.gifts?.name||"Gift"}</h3><p class="small-text">For: ${i.wishlists?.person_name||"Unknown"} · Quantity: ${i.quantity||1} · ${formatMoney(i.price||i.gifts?.cost)}</p></article>`).join("");
-}
-
-function setupAdminForms(){
- const codeInput=document.getElementById("wishlistCode");const codeBtn=document.getElementById("generateCodeBtn");
- if(codeInput&&!codeInput.value)codeInput.value=generateCode();
- if(codeBtn)codeBtn.addEventListener("click",()=>codeInput.value=generateCode());
-
- const wishlistForm=document.getElementById("wishlistForm");
- if(wishlistForm)wishlistForm.addEventListener("submit",async e=>{
-  e.preventDefault();const user=await requireLogin();if(!user)return;
-  const personName=document.getElementById("wishlistPerson").value.trim();
-  const code=document.getElementById("wishlistCode").value.trim().toUpperCase();
-  const{data,error}=await supabase.from("wishlists").insert({person_name:personName,wishlist_code:code,created_by:user.id}).select().single();
-  if(error){showMessage("adminMessage",error.message);return}
-  await supabase.from("wishlist_members").insert({wishlist_id:data.id,user_id:user.id,can_view:true,can_edit:true});
-  showMessage("adminMessage","Wishlist created.");wishlistForm.reset();document.getElementById("wishlistCode").value=generateCode();await populateWishlistDropdown();
- });
-
- const giftForm=document.getElementById("giftForm");
- if(giftForm)giftForm.addEventListener("submit",async e=>{
-  e.preventDefault();const user=await requireLogin();if(!user)return;
-  const wishlistId=document.getElementById("giftWishlist").value;
-  if(!wishlistId){showMessage("adminMessage","Please select a wishlist.");return}
-  const{error}=await supabase.from("gifts").insert({
-   wishlist_id:wishlistId,
-   name:document.getElementById("giftName").value.trim(),
-   image_url:document.getElementById("giftImageUrl").value.trim()||null,
-   gift_url:document.getElementById("giftUrl").value.trim()||null,
-   cost:document.getElementById("giftCost").value||null,
-   quantity:Number(document.getElementById("giftQuantity").value||1),
-   priority:document.getElementById("giftPriority").value,
-   status:"Available",
-   notes:document.getElementById("giftNotes").value.trim(),
-   created_by:user.id
-  });
-  showMessage("adminMessage",error?error.message:"Gift added.");if(!error)giftForm.reset();await populateWishlistDropdown();
- });
-}
-
-if(page==="wishlists")loadWishlists();
-if(page==="wishlist"){loadWishlistName();loadGifts()}
-if(page==="purchases")loadPurchases();
-if(page==="admin"){setupAdminForms();populateWishlistDropdown()}
+async function loadWishlists(){const list=document.getElementById("wishlistList");if(!list)return;const{data,error}=await supabase.from("wishlists").select("*").order("created_at",{ascending:false});if(error){list.innerHTML=`<div class="card small-text">${error.message}</div>`;return}if(!data||data.length===0){list.innerHTML=`<div class="card small-text">No wishlists yet. Create one in Admin.</div>`;return}list.innerHTML=data.map(w=>`<a class="menu-tile" href="wishlist.html?id=${w.id}"><div class="menu-icon">🎁</div><div><h3>${w.person_name}</h3><p>Wishlist code: ${w.wishlist_code}</p></div></a>`).join("")}
+async function loadWishlistName(){const title=document.getElementById("wishlistTitle");if(!title)return;const id=new URLSearchParams(window.location.search).get("id");if(!id)return;const{data,error}=await supabase.from("wishlists").select("*").eq("id",id).single();if(error)return;currentWishlist=data;title.textContent=`${data.person_name}'s Wishlist`;const a=document.getElementById("editWishlistId"),b=document.getElementById("editWishlistPerson"),c=document.getElementById("editWishlistCode");if(a)a.value=data.id;if(b)b.value=data.person_name||"";if(c)c.value=data.wishlist_code||""}
+function filterSort(gifts){const s=(document.getElementById("giftSearch")?.value||"").toLowerCase().trim(),st=document.getElementById("statusFilter")?.value||"All",p=document.getElementById("priorityFilter")?.value||"All",sort=document.getElementById("sortFilter")?.value||"newest";let f=[...gifts];if(s)f=f.filter(g=>(g.name||"").toLowerCase().includes(s)||(g.notes||"").toLowerCase().includes(s));if(st!=="All")f=f.filter(g=>(g.status||"Available")===st);if(p!=="All")f=f.filter(g=>(g.priority||"N/A")===p);f.sort((a,b)=>{if(sort==="oldest")return new Date(a.created_at)-new Date(b.created_at);if(sort==="priceLow")return Number(a.cost||0)-Number(b.cost||0);if(sort==="priceHigh")return Number(b.cost||0)-Number(a.cost||0);if(sort==="nameAZ")return(a.name||"").localeCompare(b.name||"");return new Date(b.created_at)-new Date(a.created_at)});return f}
+function renderGifts(){const list=document.getElementById("giftList");if(!list)return;const gifts=filterSort(currentGifts);if(!gifts.length){list.innerHTML=`<div class="card small-text">No matching gifts.</div>`;return}list.innerHTML=gifts.map(g=>`<article class="gift-card"><div class="gift-image">${g.image_url?`<img src="${g.image_url}" alt="">`:"🎁"}</div><div><h3>${g.name}</h3><p class="small-text">${formatMoney(g.cost)} · Qty ${g.quantity||1}</p><div class="gift-actions">${g.gift_url?`<a class="gift-link" href="${g.gift_url}" target="_blank" rel="noopener">Open gift link</a>`:""}<button class="edit-link" type="button" data-edit-gift="${g.id}">Edit</button><button class="delete-link" type="button" data-delete-gift="${g.id}">Delete</button></div><div class="meta"><span class="pill">${g.priority||"N/A"}</span><span class="pill ${(g.status||"Available").toLowerCase()}">${g.status||"Available"}</span></div></div></article>`).join("");document.querySelectorAll("[data-delete-gift]").forEach(btn=>btn.addEventListener("click",async()=>{if(!confirm("Delete this gift?"))return;const{error}=await supabase.from("gifts").delete().eq("id",btn.dataset.deleteGift);if(error){alert(error.message);return}await loadGifts()}));document.querySelectorAll("[data-edit-gift]").forEach(btn=>btn.addEventListener("click",()=>openGiftEditor(btn.dataset.editGift)))}
+async function loadGifts(){const list=document.getElementById("giftList");if(!list)return;const id=new URLSearchParams(window.location.search).get("id");let q=supabase.from("gifts").select("*").order("created_at",{ascending:false});if(id)q=q.eq("wishlist_id",id);const{data,error}=await q;if(error){list.innerHTML=`<div class="card small-text">${error.message}</div>`;return}currentGifts=data||[];if(!currentGifts.length){list.innerHTML=`<div class="card small-text">No gifts yet. Add gift ideas in Admin.</div>`;return}renderGifts()}
+function setupGiftFilters(){["giftSearch","statusFilter","priorityFilter","sortFilter"].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener("input",renderGifts);el.addEventListener("change",renderGifts)}})}
+function openGiftEditor(id){const g=currentGifts.find(x=>x.id===id);if(!g)return;editGiftId.value=g.id;editGiftName.value=g.name||"";editGiftUrl.value=g.gift_url||"";editGiftImageUrl.value=g.image_url||"";editGiftCost.value=g.cost??"";editGiftQuantity.value=g.quantity||1;editGiftPriority.value=g.priority||"N/A";editGiftStatus.value=g.status||"Available";editGiftNotes.value=g.notes||"";giftModalBackdrop.classList.add("show")}
+function setupGiftEditor(){const form=document.getElementById("editGiftForm");if(closeGiftModal)closeGiftModal.addEventListener("click",()=>giftModalBackdrop.classList.remove("show"));if(!form)return;form.addEventListener("submit",async e=>{e.preventDefault();const updates={name:editGiftName.value.trim(),gift_url:editGiftUrl.value.trim()||null,image_url:editGiftImageUrl.value.trim()||null,cost:editGiftCost.value||null,quantity:Number(editGiftQuantity.value||1),priority:editGiftPriority.value,status:editGiftStatus.value,notes:editGiftNotes.value.trim()};const{error}=await supabase.from("gifts").update(updates).eq("id",editGiftId.value);if(error){alert(error.message);return}giftModalBackdrop.classList.remove("show");await loadGifts()})}
+function setupWishlistEditor(){if(openWishlistSettings)openWishlistSettings.addEventListener("click",()=>{if(currentWishlist){editWishlistId.value=currentWishlist.id;editWishlistPerson.value=currentWishlist.person_name||"";editWishlistCode.value=currentWishlist.wishlist_code||""}wishlistModalBackdrop.classList.add("show")});if(closeWishlistModal)closeWishlistModal.addEventListener("click",()=>wishlistModalBackdrop.classList.remove("show"));if(copyWishlistCode)copyWishlistCode.addEventListener("click",async()=>{await navigator.clipboard.writeText(editWishlistCode.value);copyWishlistCode.textContent="Copied";setTimeout(()=>copyWishlistCode.textContent="Copy code",900)});const form=document.getElementById("editWishlistForm");if(!form)return;form.addEventListener("submit",async e=>{e.preventDefault();const{error}=await supabase.from("wishlists").update({person_name:editWishlistPerson.value.trim(),wishlist_code:editWishlistCode.value.trim().toUpperCase()}).eq("id",editWishlistId.value);if(error){alert(error.message);return}wishlistModalBackdrop.classList.remove("show");await loadWishlistName()})}
+async function populateWishlistDropdown(){const dd=document.getElementById("giftWishlist");if(!dd)return;const{data,error}=await supabase.from("wishlists").select("*").order("person_name",{ascending:true});if(error){dd.innerHTML=`<option value="">Unable to load wishlists</option>`;return}if(!data||!data.length){dd.innerHTML=`<option value="">Create a wishlist first</option>`;return}dd.innerHTML=`<option value="">Select a wishlist</option>`+data.map(w=>`<option value="${w.id}">${w.person_name} (${w.wishlist_code})</option>`).join("")}
+async function loadPurchases(){const list=document.getElementById("purchaseList");if(!list)return;const user=await requireLogin();if(!user)return;const{data,error}=await supabase.from("purchases").select("*, gifts(name, cost), wishlists(person_name)").eq("buyer_id",user.id).order("purchased_at",{ascending:false});if(error){list.innerHTML=`<div class="card small-text">${error.message}</div>`;return}if(!data||!data.length){list.innerHTML=`<div class="card small-text">No purchases yet.</div>`;return}list.innerHTML=data.map(i=>`<article class="card"><h3>${i.gifts?.name||"Gift"}</h3><p class="small-text">For: ${i.wishlists?.person_name||"Unknown"} · Quantity: ${i.quantity||1} · ${formatMoney(i.price||i.gifts?.cost)}</p></article>`).join("")}
+function setupAdminForms(){const codeInput=document.getElementById("wishlistCode"),codeBtn=document.getElementById("generateCodeBtn");if(codeInput&&!codeInput.value)codeInput.value=generateCode();if(codeBtn)codeBtn.addEventListener("click",()=>codeInput.value=generateCode());const wishlistForm=document.getElementById("wishlistForm");if(wishlistForm)wishlistForm.addEventListener("submit",async e=>{e.preventDefault();const user=await requireLogin();if(!user)return;const{data,error}=await supabase.from("wishlists").insert({person_name:wishlistPerson.value.trim(),wishlist_code:wishlistCode.value.trim().toUpperCase(),created_by:user.id}).select().single();if(error){showMessage("adminMessage",error.message);return}await supabase.from("wishlist_members").insert({wishlist_id:data.id,user_id:user.id,can_view:true,can_edit:true});showMessage("adminMessage","Wishlist created.");wishlistForm.reset();wishlistCode.value=generateCode();await populateWishlistDropdown()});const giftForm=document.getElementById("giftForm");if(giftForm)giftForm.addEventListener("submit",async e=>{e.preventDefault();const user=await requireLogin();if(!user)return;if(!giftWishlist.value){showMessage("adminMessage","Please select a wishlist.");return}const{error}=await supabase.from("gifts").insert({wishlist_id:giftWishlist.value,name:giftName.value.trim(),image_url:giftImageUrl.value.trim()||null,gift_url:giftUrl.value.trim()||null,cost:giftCost.value||null,quantity:Number(giftQuantity.value||1),priority:giftPriority.value,status:"Available",notes:giftNotes.value.trim(),created_by:user.id});showMessage("adminMessage",error?error.message:"Gift added.");if(!error)giftForm.reset();await populateWishlistDropdown()})}
+if(page==="wishlists")loadWishlists();if(page==="wishlist"){loadWishlistName();loadGifts();setupGiftFilters();setupGiftEditor();setupWishlistEditor()}if(page==="purchases")loadPurchases();if(page==="admin"){setupAdminForms();populateWishlistDropdown()}

@@ -96,3 +96,10 @@ create policy "Users can view own purchases" on public.purchases for select usin
 
 drop policy if exists "Users can add own purchases" on public.purchases;
 create policy "Users can add own purchases" on public.purchases for insert with check (auth.uid() = buyer_id);
+
+
+drop policy if exists "gifts_delete_own" on public.gifts;
+create policy "gifts_delete_own" on public.gifts for delete using (auth.uid() = created_by);
+
+drop policy if exists "wishlists_delete_own" on public.wishlists;
+create policy "wishlists_delete_own" on public.wishlists for delete using (auth.uid() = created_by);
