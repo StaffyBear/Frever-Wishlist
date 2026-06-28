@@ -1,21 +1,9 @@
 {
   "name": "Frever Wishlist",
   "short_name": "Frever",
-  "description": "Private family gift registry and wishlist app",
+  "description": "Private family gift wishlist app",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#FFF8EF",
-  "theme_color": "#5A2A4A",
-  "icons": [
-    {
-      "src": "assets/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "assets/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+  "theme_color": "#5A2A4A"
 }
