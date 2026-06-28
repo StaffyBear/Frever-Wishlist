@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · Frever Wishlist</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/main.css">
+  <script type="module" src="js/app.js" defer></script>
+</head>
+<body data-page="login">
+  <main class="app-shell">
+    
+<a class="back-link" href="index.html">← Back</a>
+<section class="hero-card">
+  <div class="logo-wrap">
+    <div class="logo-mark">🐼</div>
+    <div>
+      <h1 class="logo-title">Welcome back</h1>
+      <p class="logo-subtitle">Sign in to Frever Wishlist</p>
+    </div>
+  </div>
+
+  <form class="form" id="loginForm">
+    <div>
+      <label for="loginEmail">Email address</label>
+      <input id="loginEmail" type="email" autocomplete="email" required>
+    </div>
+
+    <div>
+      <label for="loginPassword">Password</label>
+      <input id="loginPassword" type="password" autocomplete="current-password" required>
+    </div>
+
+    <button class="btn full" type="submit">Sign in</button>
+    <div class="status-message" id="authMessage"></div>
+  </form>
+
+  <p class="link-row">No account? <a href="register.html">Register</a></p>
+</section>
+
+    
+  </main>
+</body>
+</html>
