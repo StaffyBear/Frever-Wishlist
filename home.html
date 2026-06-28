@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Home · Frever Wishlist</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/main.css">
+<script type="module" src="js/home.js" defer></script>
+</head>
+<body>
+<main class="app">
+<header class="top">
+  <div class="brand">
+    <div class="logo">🐼</div>
+    <div><h1>Frever</h1><p id="emailText">Loading...</p></div>
+  </div>
+</header>
+
+<h1 class="page-title">Home</h1>
+<p class="page-intro">Create wishlists, view shared lists and track gifts.</p>
+
+<section class="card">
+  <h2>Create Wishlist</h2>
+  <form id="quickCreateForm" class="form">
+    <div><label>Person name</label><input id="quickPerson" placeholder="Freddie" required></div>
+    <button class="btn full" type="submit">Create wishlist</button>
+    <div class="status" id="homeMessage"></div>
+  </form>
+</section>
+
+<h2 class="section-title">My Wishlists</h2>
+<section id="myPreview" class="grid"></section>
+
+<h2 class="section-title">Shared With Me</h2>
+<section id="sharedPreview" class="grid"></section>
+
+<section class="grid" style="margin-top:18px;">
+  <a class="tile" href="wishlists.html"><div class="tile-icon">🎁</div><div><h3>All Wishlists</h3><p>Manage your lists and add codes</p></div></a>
+  <a class="tile" href="purchases.html"><div class="tile-icon">🛍️</div><div><h3>Purchases</h3><p>View what you have bought</p></div></a>
+  <button class="tile" id="logoutBtn" style="border:1px solid var(--border);text-align:left;cursor:pointer;"><div class="tile-icon">🚪</div><div><h3>Sign out</h3><p>Leave this device</p></div></button>
+</section>
+<nav class="bottom-nav">
+<a href="home.html" class="active">Home</a>
+<a href="wishlists.html" class="">Lists</a>
+<a href="purchases.html" class="">Bought</a>
+<a href="profile.html" class="">Profile</a>
+</nav>
+</main>
+</body>
+</html>

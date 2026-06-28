@@ -1,9 +1,8 @@
 {
   "name": "Frever Wishlist",
   "short_name": "Frever",
-  "description": "Private family gift wishlist app",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#FFF8EF",
-  "theme_color": "#5A2A4A"
+  "background_color": "#FFF7EC",
+  "theme_color": "#6D2E59"
 }

@@ -1,6 +1,29 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Profile · Frever Wishlist</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="css/main.css"><script type="module" src="js/app.js" defer></script></head><body data-page="profile"><main class="app-shell"><a class="back-link" href="dashboard.html">← Dashboard</a><h1 class="page-title">Profile</h1><section class="card"><h2>Your account</h2><p class="small-text">Signed in as:</p><p><strong data-user-email>Loading...</strong></p><button class="btn danger full" id="logoutBtn">Sign out</button></section><nav class="bottom-nav">
-<a href="dashboard.html" class="">Home</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Profile · Frever Wishlist</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/main.css">
+<script type="module" src="js/profile.js" defer></script>
+</head>
+<body>
+<main class="app">
+<a class="back" href="home.html">← Home</a>
+<h1 class="page-title">Profile</h1>
+<section class="card stack">
+  <h2>Your account</h2>
+  <p class="small">Signed in as:</p>
+  <p><strong id="emailText">Loading...</strong></p>
+  <button class="btn danger full" id="logoutBtn">Sign out</button>
+</section>
+<nav class="bottom-nav">
+<a href="home.html" class="">Home</a>
 <a href="wishlists.html" class="">Lists</a>
 <a href="purchases.html" class="">Bought</a>
 <a href="profile.html" class="active">Profile</a>
-</nav></main></body></html>
+</nav>
+</main>
+</body>
+</html>

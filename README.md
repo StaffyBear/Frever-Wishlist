@@ -1,17 +1,31 @@
-# Frever Wishlist - Simplified Version
+# Frever Wishlist v2
 
-This version removes the Registry layer.
+This is the cleaner rebuild.
 
-Run `supabase-schema.sql` in Supabase SQL Editor, then upload the files to GitHub.
+## What changed
 
-A Wishlist is now one person, such as Freddie. Gifts are added to that person's wishlist using a dropdown.
+- Admin page removed.
+- Home is now the main page.
+- Wishlists page has:
+  - My Wishlists
+  - Other Wishlists
+  - Join another wishlist by code
+- Add Gift now lives on the individual wishlist page.
+- Wishlist page has search and sorting only.
+- Add/Edit Gift uses compact popups.
+- Code split into separate JS files.
 
+## Supabase
 
-Update adds edit gift, edit wishlist, delete gift, blue links, search, filters and sorting.
+Run `supabase-v2-schema.sql` in Supabase SQL Editor.
 
-## Wishlist UX update
-- My Wishlists and Other Wishlists sections
-- Add wishlist by code
-- Add gift from wishlist page
-- Removed status/priority filters
-- Compact add/edit popups
+If you already have the simplified tables, this script is safe to run over them.
+
+## Secure join update
+
+This version fixes wishlist visibility.
+
+- New accounts will not automatically see existing wishlists.
+- Users join a wishlist by entering the 5-character code.
+- The app now uses the Supabase RPC function `join_wishlist_by_code`.
+- Run `supabase-update-secure-join.sql` in Supabase SQL Editor if your database already exists.

@@ -1,0 +1,170 @@
+import { supabase } from "./supabase.js";
+import { requireUser } from "./auth-core.js";
+import { money, openModal, closeModal } from "./utils.js";
+
+const user = await requireUser();
+const params = new URLSearchParams(window.location.search);
+const wishlistId = params.get("id");
+let wishlist = null;
+let gifts = [];
+
+if (!wishlistId) window.location.href = "wishlists.html";
+
+async function loadWishlist(){
+  const { data, error } = await supabase.from("wishlists").select("*").eq("id", wishlistId).single();
+  if (error) {
+    document.getElementById("giftList").innerHTML = `<div class="empty">${error.message}</div>`;
+    return;
+  }
+  wishlist = data;
+  document.getElementById("title").textContent = `${wishlist.person_name}'s Wishlist`;
+  document.getElementById("editPerson").value = wishlist.person_name;
+  document.getElementById("editCode").value = wishlist.wishlist_code;
+}
+
+async function loadGifts(){
+  const { data, error } = await supabase.from("gifts").select("*").eq("wishlist_id", wishlistId).order("created_at", { ascending:false });
+  if (error) {
+    document.getElementById("giftList").innerHTML = `<div class="empty">${error.message}</div>`;
+    return;
+  }
+  gifts = data || [];
+  renderGifts();
+}
+
+function sortedGifts(){
+  const search = document.getElementById("search").value.trim().toLowerCase();
+  const sort = document.getElementById("sort").value;
+  let filtered = gifts.filter(g => !search || (g.name || "").toLowerCase().includes(search) || (g.notes || "").toLowerCase().includes(search));
+  filtered.sort((a,b) => {
+    if (sort === "oldest") return new Date(a.created_at) - new Date(b.created_at);
+    if (sort === "priceLow") return Number(a.cost || 0) - Number(b.cost || 0);
+    if (sort === "priceHigh") return Number(b.cost || 0) - Number(a.cost || 0);
+    if (sort === "nameAZ") return (a.name || "").localeCompare(b.name || "");
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+  return filtered;
+}
+
+function renderGifts(){
+  const list = document.getElementById("giftList");
+  const display = sortedGifts();
+
+  if (!display.length) {
+    list.innerHTML = `<div class="empty">No gifts found. Tap + to add one.</div>`;
+    return;
+  }
+
+  list.innerHTML = display.map(g => `
+    <article class="gift-card">
+      <div class="gift-img">${g.image_url ? `<img src="${g.image_url}" alt="">` : "🎁"}</div>
+      <div>
+        <h3>${g.name}</h3>
+        <div class="small">${money(g.cost)} · Qty ${g.quantity || 1}</div>
+        <div class="actions">
+          ${g.gift_url ? `<a class="link" href="${g.gift_url}" target="_blank" rel="noopener">Open link</a>` : ""}
+          <button class="text-btn" data-edit="${g.id}">Edit</button>
+          <button class="text-btn danger" data-delete="${g.id}">Delete</button>
+        </div>
+        <div class="pills">
+          <span class="pill">${g.priority || "N/A"}</span>
+          <span class="pill ${g.status || "Available"}">${g.status || "Available"}</span>
+        </div>
+      </div>
+    </article>
+  `).join("");
+
+  document.querySelectorAll("[data-edit]").forEach(btn => btn.addEventListener("click", () => openEdit(btn.dataset.edit)));
+  document.querySelectorAll("[data-delete]").forEach(btn => btn.addEventListener("click", () => deleteGift(btn.dataset.delete)));
+}
+
+function openEdit(id){
+  const g = gifts.find(x => x.id === id);
+  if (!g) return;
+  document.getElementById("editGiftId").value = g.id;
+  document.getElementById("editGiftName").value = g.name || "";
+  document.getElementById("editGiftUrl").value = g.gift_url || "";
+  document.getElementById("editGiftImage").value = g.image_url || "";
+  document.getElementById("editGiftCost").value = g.cost ?? "";
+  document.getElementById("editGiftQty").value = g.quantity || 1;
+  document.getElementById("editGiftPriority").value = g.priority || "N/A";
+  document.getElementById("editGiftStatus").value = g.status || "Available";
+  document.getElementById("editGiftNotes").value = g.notes || "";
+  openModal("editGiftModal");
+}
+
+async function deleteGift(id){
+  if (!confirm("Delete this gift?")) return;
+  const { error } = await supabase.from("gifts").delete().eq("id", id);
+  if (error) return alert(error.message);
+  await loadGifts();
+}
+
+document.getElementById("search").addEventListener("input", renderGifts);
+document.getElementById("sort").addEventListener("change", renderGifts);
+
+document.getElementById("addGiftBtn").addEventListener("click", () => openModal("addGiftModal"));
+document.getElementById("closeAddGift").addEventListener("click", () => closeModal("addGiftModal"));
+document.getElementById("closeEditGift").addEventListener("click", () => closeModal("editGiftModal"));
+document.getElementById("settingsBtn").addEventListener("click", () => openModal("wishlistModal"));
+document.getElementById("closeWishlist").addEventListener("click", () => closeModal("wishlistModal"));
+
+document.getElementById("copyCode").addEventListener("click", async () => {
+  await navigator.clipboard.writeText(document.getElementById("editCode").value);
+  document.getElementById("copyCode").textContent = "Copied";
+  setTimeout(() => document.getElementById("copyCode").textContent = "Copy code", 900);
+});
+
+document.getElementById("addGiftForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const { error } = await supabase.from("gifts").insert({
+    wishlist_id: wishlistId,
+    name: document.getElementById("addGiftName").value.trim(),
+    gift_url: document.getElementById("addGiftUrl").value.trim() || null,
+    image_url: document.getElementById("addGiftImage").value.trim() || null,
+    cost: document.getElementById("addGiftCost").value || null,
+    quantity: Number(document.getElementById("addGiftQty").value || 1),
+    priority: document.getElementById("addGiftPriority").value,
+    status: "Available",
+    notes: document.getElementById("addGiftNotes").value.trim(),
+    created_by: user.id
+  });
+  if (error) return alert(error.message);
+  e.target.reset();
+  document.getElementById("addGiftQty").value = 1;
+  document.getElementById("addGiftPriority").value = "N/A";
+  closeModal("addGiftModal");
+  await loadGifts();
+});
+
+document.getElementById("editGiftForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("editGiftId").value;
+  const { error } = await supabase.from("gifts").update({
+    name: document.getElementById("editGiftName").value.trim(),
+    gift_url: document.getElementById("editGiftUrl").value.trim() || null,
+    image_url: document.getElementById("editGiftImage").value.trim() || null,
+    cost: document.getElementById("editGiftCost").value || null,
+    quantity: Number(document.getElementById("editGiftQty").value || 1),
+    priority: document.getElementById("editGiftPriority").value,
+    status: document.getElementById("editGiftStatus").value,
+    notes: document.getElementById("editGiftNotes").value.trim()
+  }).eq("id", id);
+  if (error) return alert(error.message);
+  closeModal("editGiftModal");
+  await loadGifts();
+});
+
+document.getElementById("wishlistForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const { error } = await supabase.from("wishlists").update({
+    person_name: document.getElementById("editPerson").value.trim(),
+    wishlist_code: document.getElementById("editCode").value.trim().toUpperCase()
+  }).eq("id", wishlistId);
+  if (error) return alert(error.message);
+  closeModal("wishlistModal");
+  await loadWishlist();
+});
+
+await loadWishlist();
+await loadGifts();
