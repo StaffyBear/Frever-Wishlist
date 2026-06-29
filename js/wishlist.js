@@ -4,7 +4,7 @@ import { money, openModal, closeModal } from "./utils.js";
 
 const user = await requireUser();
 const wishlistId = new URLSearchParams(window.location.search).get("id");
-const ICONS = ["🎁", "🐼", "👦", "👧", "🎄", "🎂", "⭐", "🌈", "⚽", "🎮", "📚", "🚗", "🧸", "🦕", "🚀", "❤️", "🌸", "🎵", "🏆", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+const ICONS = ["gift-purple", "gift-red", "gift-blue", "gift-green", "gift-gold", "gift-pink", "gift-teal", "🐼", "👦", "👧", "🎄", "🎂", "⭐", "🌈", "⚽", "🎮", "📚", "🚗", "🧸", "🦕", "🚀", "❤️", "🌸", "🎵", "🏆", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
 let wishlist = null;
 let gifts = [];
@@ -13,12 +13,13 @@ let isOwner = false;
 if (!wishlistId) window.location.href = "wishlists.html";
 
 function displayIcon(icon) {
-  if (!icon) return "🎁";
+  if (!icon) return `<span class="gift-colour-icon gift-purple">🎁</span>`;
+  if (icon.startsWith("gift-")) return `<span class="gift-colour-icon ${icon}">🎁</span>`;
   if (icon.length === 1 && /[A-Z]/.test(icon)) return `<span class="initial-icon">${icon}</span>`;
   return icon;
 }
 
-function renderIconPicker(containerId, hiddenInputId, selected = "🎁") {
+function renderIconPicker(containerId, hiddenInputId, selected = "gift-purple") {
   const box = document.getElementById(containerId);
   const hidden = document.getElementById(hiddenInputId);
   if (!box || !hidden) return;
@@ -57,7 +58,7 @@ async function loadWishlist() {
 
   document.getElementById("editPerson").value = wishlist.person_name;
   document.getElementById("editCode").value = wishlist.wishlist_code;
-  renderIconPicker("editIconPicker", "editIcon", wishlist.icon || "🎁");
+  renderIconPicker("editIconPicker", "editIcon", wishlist.icon || "gift-purple");
 
   document.getElementById("addGiftBtn").style.display = isOwner ? "block" : "none";
   document.getElementById("ownerSettings").style.display = isOwner ? "block" : "none";
@@ -174,15 +175,17 @@ function renderGifts() {
 }
 
 async function syncPurchaseRecord(gift, status) {
-  await supabase.from("purchases").delete().eq("gift_id", gift.id).eq("buyer_id", user.id);
-
   if (status === "Purchased") {
-    const { error } = await supabase.from("purchases").insert({
-      gift_id: gift.id,
-      wishlist_id: gift.wishlist_id,
-      buyer_id: user.id,
-      quantity: gift.quantity || 1,
-      price: gift.cost || null
+    const { error } = await supabase.rpc("record_purchase", {
+      gift_input: gift.id,
+      wishlist_input: gift.wishlist_id,
+      quantity_input: gift.quantity || 1,
+      price_input: gift.cost || null
+    });
+    if (error) alert("Gift marked as purchased, but purchase history could not be saved: " + error.message);
+  } else {
+    const { error } = await supabase.rpc("remove_purchase_record", {
+      gift_input: gift.id
     });
     if (error) console.warn(error.message);
   }
@@ -229,10 +232,16 @@ async function tryAutoFill() {
 
   message.textContent = "Trying to fetch details...";
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
   try {
     const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-    const res = await fetch(proxyUrl);
+    const res = await fetch(proxyUrl, { signal: controller.signal });
+    clearTimeout(timeout);
+
     if (!res.ok) throw new Error("Could not fetch page.");
+
     const html = await res.text();
 
     const getMeta = prop => {
@@ -243,7 +252,7 @@ async function tryAutoFill() {
       ];
       for (const p of patterns) {
         const m = html.match(p);
-        if (m) return m[1].replace(/&amp;/g, "&");
+        if (m) return m[1].replace(/&amp;/g, "&").trim();
       }
       return "";
     };
@@ -262,6 +271,7 @@ async function tryAutoFill() {
       ? "Auto-fill added what it could. Please check before saving."
       : "Could not find useful details. Please enter manually.";
   } catch (err) {
+    clearTimeout(timeout);
     message.textContent = "Could not auto-fill this link. Please enter manually.";
   }
 }
@@ -347,7 +357,7 @@ document.getElementById("wishlistForm").addEventListener("submit", async event =
   const { error } = await supabase.from("wishlists").update({
     person_name: document.getElementById("editPerson").value.trim(),
     wishlist_code: document.getElementById("editCode").value.trim().toUpperCase(),
-    icon: document.getElementById("editIcon").value || "🎁"
+    icon: document.getElementById("editIcon").value || "gift-purple"
   }).eq("id", wishlistId);
 
   if (error) return alert(error.message);

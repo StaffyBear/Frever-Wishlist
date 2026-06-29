@@ -36,3 +36,14 @@ Fixes:
 - Purchase history is created when a gift is marked Purchased from buttons or edit form.
 - Viewer and shared wishlist RPC functions included.
 - Keeps URL auto-fill helper.
+
+## v2.6 polish fixes
+
+Run `supabase-v2-6-update.sql` in Supabase SQL Editor.
+
+Fixes:
+- Added different colour gift icons.
+- Letters are now purple with white background.
+- Bottom navigation simplified and made consistent.
+- Purchase history now uses RPC helpers, so it should save reliably.
+- Auto-fill from URL now times out instead of getting stuck.

@@ -3,15 +3,18 @@ import { requireUser } from "./auth-core.js";
 import { code, showMessage, openModal, closeModal } from "./utils.js";
 
 const user = await requireUser();
-const ICONS = ["🎁", "🐼", "👦", "👧", "🎄", "🎂", "⭐", "🌈", "⚽", "🎮", "📚", "🚗", "🧸", "🦕", "🚀", "❤️", "🌸", "🎵", "🏆", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+const ICONS = ["gift-purple", "gift-red", "gift-blue", "gift-green", "gift-gold", "gift-pink", "gift-teal", "🐼", "👦", "👧", "🎄", "🎂", "⭐", "🌈", "⚽", "🎮", "📚", "🚗", "🧸", "🦕", "🚀", "❤️", "🌸", "🎵", "🏆", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+
 
 function displayIcon(icon) {
-  if (!icon) return "🎁";
+  if (!icon) return `<span class="gift-colour-icon gift-purple">🎁</span>`;
+  if (icon.startsWith("gift-")) return `<span class="gift-colour-icon ${icon}">🎁</span>`;
   if (icon.length === 1 && /[A-Z]/.test(icon)) return `<span class="initial-icon">${icon}</span>`;
   return icon;
 }
 
-function renderIconPicker(containerId, hiddenInputId, selected = "🎁") {
+
+function renderIconPicker(containerId, hiddenInputId, selected = "gift-purple") {
   const box = document.getElementById(containerId);
   const hidden = document.getElementById(hiddenInputId);
   if (!box || !hidden) return;
@@ -34,7 +37,7 @@ function renderIconPicker(containerId, hiddenInputId, selected = "🎁") {
 
 function card(w) {
   return `<a class="tile" href="wishlist.html?id=${w.id}">
-    <div class="tile-icon">${displayIcon(w.icon || "🎁")}</div>
+    <div class="tile-icon">${displayIcon(w.icon || "gift-purple")}</div>
     <div><h3>${w.person_name}</h3><p>Wishlist code: ${w.wishlist_code}</p></div>
   </a>`;
 }
@@ -60,7 +63,7 @@ async function loadWishlists() {
 }
 
 document.getElementById("openCreateWishlist").addEventListener("click", () => {
-  renderIconPicker("createIconPicker", "wishlistIcon", "🎁");
+  renderIconPicker("createIconPicker", "wishlistIcon", "gift-purple");
   openModal("createWishlistModal");
 });
 
@@ -72,18 +75,27 @@ document.getElementById("createWishlistForm").addEventListener("submit", async e
   event.preventDefault();
 
   const personName = document.getElementById("personName").value.trim();
-  const icon = document.getElementById("wishlistIcon").value || "🎁";
+  const icon = document.getElementById("wishlistIcon").value || "gift-purple";
 
-  const { data, error } = await supabase
+  const insertPayload = {
+    person_name: personName,
+    wishlist_code: code(),
+    icon,
+    created_by: user.id
+  };
+
+  let { data, error } = await supabase
     .from("wishlists")
-    .insert({
-      person_name: personName,
-      wishlist_code: code(),
-      icon,
-      created_by: user.id
-    })
+    .insert(insertPayload)
     .select()
     .single();
+
+  if (error && error.message && error.message.includes("icon")) {
+    delete insertPayload.icon;
+    const retry = await supabase.from("wishlists").insert(insertPayload).select().single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) return showMessage("createMessage", error.message);
 
@@ -114,5 +126,5 @@ document.getElementById("joinBtn").addEventListener("click", async () => {
   await loadWishlists();
 });
 
-renderIconPicker("createIconPicker", "wishlistIcon", "🎁");
+renderIconPicker("createIconPicker", "wishlistIcon", "gift-purple");
 await loadWishlists();
