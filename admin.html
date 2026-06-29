@@ -1,1 +1,42 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin · Frever Wishlist</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="css/main.css"><script type="module" src="js/admin.js" defer></script></head><body><main class="app"><a class="back" href="home.html">← Home</a><h1 class="page-title">Admin</h1><p class="page-intro">Create new gift recipients. Wishlist and gift management then happens under All Wishlists.</p><section class="card"><h2>Create Gift Recipient</h2><form id="createWishlistForm" class="form"><div><label>Person name</label><input id="personName" placeholder="Freddie" required></div><div><label>Wishlist code</label><input id="wishlistCode" maxlength="5" required><p class="small">A random 5-character code is generated automatically.</p></div><button class="btn secondary full" type="button" id="newCodeBtn">Generate new code</button><button class="btn full" type="submit">Create recipient</button><div class="status" id="adminMessage"></div></form></section><section class="card" style="margin-top:16px;"><h2>Future Admin Ideas</h2><p class="small">Later we can add archive options, theme settings, default currency, export/backup and viewer management shortcuts.</p></section><nav class="bottom-nav"><a href="home.html">Home</a><a href="wishlists.html">Lists</a><a href="purchases.html">Bought</a><a href="profile.html">Profile</a></nav></main></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin · Frever Wishlist</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/main.css">
+<script type="module" src="js/profile.js" defer></script>
+</head>
+<body>
+<main class="app">
+<a class="back" href="home.html">← Home</a>
+<h1 class="page-title">Admin</h1>
+<p class="page-intro">Admin tools will live here as the app grows.</p>
+
+<section class="grid">
+  <a class="tile" href="wishlists.html">
+    <div class="tile-icon">🎁</div>
+    <div><h3>Manage Gift Recipients</h3><p>Create and manage wishlists</p></div>
+  </a>
+
+  <a class="tile" href="purchases.html">
+    <div class="tile-icon">🛍️</div>
+    <div><h3>Purchases</h3><p>View purchase history</p></div>
+  </a>
+
+  <section class="card">
+    <h2>Future options</h2>
+    <p class="small">Archive wishlists, export data, theme settings, default currency and backup tools.</p>
+  </section>
+</section>
+
+<nav class="bottom-nav">
+<a href="home.html">Home</a>
+<a href="wishlists.html">Lists</a>
+<a href="purchases.html">Bought</a>
+<a href="profile.html">Profile</a>
+</nav>
+</main>
+</body>
+</html>

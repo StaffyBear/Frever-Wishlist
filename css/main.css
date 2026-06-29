@@ -78,3 +78,44 @@ textarea{min-height:78px;resize:vertical}
 
 /* v2.1 navigation and permissions update */
 .status-buttons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:10px}.status-btn{border:1px solid var(--border);background:#fff;color:var(--primary);border-radius:999px;padding:8px 6px;font-size:12px;font-weight:900;cursor:pointer}.status-btn.active{background:var(--primary);color:#fff}.danger-zone{border-color:rgba(184,74,74,.35)}.viewer-row{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid var(--border);border-radius:16px;padding:10px 12px;background:#fff}.viewer-row p{margin:0}
+
+
+/* v2.2 wishlist controls update */
+.compact-toolbar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 16px 0 18px;
+}
+
+.status-select {
+  max-width: 150px;
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 999px;
+}
+
+.gift-status-row {
+  margin-top: 10px;
+}
+
+.viewer-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.viewer-row p {
+  margin: 0;
+}
+
+.danger-zone {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}

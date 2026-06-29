@@ -41,3 +41,14 @@ This version fixes wishlist visibility.
 - Owners can delete their own wishlist.
 - Owners can view and remove people who can view their wishlist.
 - Run supabase-v2-1-update.sql in Supabase SQL Editor after uploading.
+
+## v2.2 update
+
+- All Wishlists page now uses compact Create and Join buttons with popups.
+- Wishlist code is generated automatically when creating a wishlist.
+- Owners can update item status too.
+- Status controls changed from buttons to a compact dropdown.
+- Shared users can remove a wishlist from their own account using the `leave_wishlist` RPC function.
+- Viewer list function is included in `supabase-v2-2-update.sql`.
+
+Run `supabase-v2-2-update.sql` in Supabase SQL Editor after uploading this version.
