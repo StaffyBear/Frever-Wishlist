@@ -75,3 +75,6 @@ textarea{min-height:78px;resize:vertical}
 .bottom-nav a.active{background:var(--primary);color:#fff}
 .auth-card{margin-top:28px}
 .center{text-align:center}
+
+/* v2.1 navigation and permissions update */
+.status-buttons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:10px}.status-btn{border:1px solid var(--border);background:#fff;color:var(--primary);border-radius:999px;padding:8px 6px;font-size:12px;font-weight:900;cursor:pointer}.status-btn.active{background:var(--primary);color:#fff}.danger-zone{border-color:rgba(184,74,74,.35)}.viewer-row{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid var(--border);border-radius:16px;padding:10px 12px;background:#fff}.viewer-row p{margin:0}

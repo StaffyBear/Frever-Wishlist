@@ -1,39 +1,10 @@
 import { supabase } from "./supabase.js";
 import { requireUser } from "./auth-core.js";
-import { showMessage } from "./utils.js";
-
-const user = await requireUser();
-
-function card(w){
-  return `<a class="tile" href="wishlist.html?id=${w.id}"><div class="tile-icon">🎁</div><div><h3>${w.person_name}</h3><p>Code: ${w.wishlist_code}</p></div></a>`;
-}
-
-async function loadWishlists(){
-  const { data, error } = await supabase.from("wishlists").select("*").order("created_at", { ascending:false });
-  if (error) return showMessage("joinMessage", error.message);
-
-  const mine = (data || []).filter(w => w.created_by === user.id);
-  const others = (data || []).filter(w => w.created_by !== user.id);
-
-  document.getElementById("myWishlists").innerHTML = mine.length ? mine.map(card).join("") : `<div class="empty">You have not created any wishlists yet.</div>`;
-  document.getElementById("otherWishlists").innerHTML = others.length ? others.map(card).join("") : `<div class="empty">No other wishlists added yet.</div>`;
-}
-
-document.getElementById("joinBtn").addEventListener("click", async () => {
-  const code = document.getElementById("joinCode").value.trim().toUpperCase();
-  if (!code) return showMessage("joinMessage", "Enter a wishlist code.");
-
-  const { error } = await supabase.rpc("join_wishlist_by_code", {
-    code_input: code
-  });
-
-  if (error) {
-    return showMessage("joinMessage", error.message || "No wishlist found with that code.");
-  }
-
-  showMessage("joinMessage", "Wishlist added.");
-  document.getElementById("joinCode").value = "";
-  await loadWishlists();
-});
-
+import { code, showMessage } from "./utils.js";
+const user=await requireUser(); const codeInput=document.getElementById("wishlistCode"); codeInput.value=code();
+function card(w){return `<a class="tile" href="wishlist.html?id=${w.id}"><div class="tile-icon">🎁</div><div><h3>${w.person_name}</h3><p>Wishlist code: ${w.wishlist_code}</p></div></a>`}
+async function loadWishlists(){const {data,error}=await supabase.from("wishlists").select("*").order("created_at",{ascending:false}); if(error)return showMessage("joinMessage",error.message); const mine=(data||[]).filter(w=>w.created_by===user.id); const others=(data||[]).filter(w=>w.created_by!==user.id); document.getElementById("myWishlists").innerHTML=mine.length?mine.map(card).join(""):`<div class="empty">You have not created any wishlists yet.</div>`; document.getElementById("otherWishlists").innerHTML=others.length?others.map(card).join(""):`<div class="empty">No other wishlists added yet.</div>`}
+document.getElementById("newCodeBtn").addEventListener("click",()=>codeInput.value=code());
+document.getElementById("createWishlistForm").addEventListener("submit",async e=>{e.preventDefault(); const personName=document.getElementById("personName").value.trim(); const wishlistCode=codeInput.value.trim().toUpperCase(); const {data,error}=await supabase.from("wishlists").insert({person_name:personName,wishlist_code:wishlistCode,created_by:user.id}).select().single(); if(error)return showMessage("createMessage",error.message); await supabase.from("wishlist_members").insert({wishlist_id:data.id,user_id:user.id,can_view:true,can_edit:true}); showMessage("createMessage","Wishlist created."); e.target.reset(); codeInput.value=code(); await loadWishlists();});
+document.getElementById("joinBtn").addEventListener("click",async()=>{const joinCode=document.getElementById("joinCode").value.trim().toUpperCase(); if(!joinCode)return showMessage("joinMessage","Enter a wishlist code."); const {error}=await supabase.rpc("join_wishlist_by_code",{code_input:joinCode}); if(error)return showMessage("joinMessage",error.message||"No wishlist found with that code."); showMessage("joinMessage","Wishlist added."); document.getElementById("joinCode").value=""; await loadWishlists();});
 await loadWishlists();

@@ -29,3 +29,15 @@ This version fixes wishlist visibility.
 - Users join a wishlist by entering the 5-character code.
 - The app now uses the Supabase RPC function `join_wishlist_by_code`.
 - Run `supabase-update-secure-join.sql` in Supabase SQL Editor if your database already exists.
+
+## v2.1 update
+- Home is navigation only.
+- Home includes All Wishlists, Purchases, Admin and Sign Out.
+- Create Wishlist moved to All Wishlists.
+- Join another wishlist moved to the bottom of All Wishlists.
+- Other users' wishlists no longer show edit/delete gift controls.
+- Shared wishlist users can set gift status to Available, Reserved or Purchased.
+- Shared wishlist users can remove the wishlist from their account.
+- Owners can delete their own wishlist.
+- Owners can view and remove people who can view their wishlist.
+- Run supabase-v2-1-update.sql in Supabase SQL Editor after uploading.
