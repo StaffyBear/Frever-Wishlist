@@ -4,7 +4,7 @@ import { money, openModal, closeModal } from "./utils.js";
 
 const user = await requireUser();
 const wishlistId = new URLSearchParams(window.location.search).get("id");
-const ICONS = ["🎁", "🐼", "👦", "👧", "🎄", "🎂", "⭐", "🌈", "⚽", "🎮", "📚", "🚗", "🧸", "🦕", "🚀", "❤️", "🌸", "🎵", "🏆", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "R", "S", "T"];
+const ICONS = ["🎁", "🐼", "👦", "👧", "🎄", "🎂", "⭐", "🌈", "⚽", "🎮", "📚", "🚗", "🧸", "🦕", "🚀", "❤️", "🌸", "🎵", "🏆", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
 let wishlist = null;
 let gifts = [];
@@ -173,23 +173,26 @@ function renderGifts() {
   document.querySelectorAll("[data-status-id]").forEach(btn => btn.addEventListener("click", () => updateGiftStatus(btn.dataset.statusId, btn.dataset.status)));
 }
 
-async function updateGiftStatus(id, status) {
-  const gift = gifts.find(g => g.id === id);
-  const { error } = await supabase.from("gifts").update({ status }).eq("id", id);
-  if (error) return alert(error.message);
+async function syncPurchaseRecord(gift, status) {
+  await supabase.from("purchases").delete().eq("gift_id", gift.id).eq("buyer_id", user.id);
 
-  await supabase.from("purchases").delete().eq("gift_id", id).eq("buyer_id", user.id);
-
-  if (status === "Purchased" && gift) {
-    await supabase.from("purchases").insert({
-      gift_id: id,
+  if (status === "Purchased") {
+    const { error } = await supabase.from("purchases").insert({
+      gift_id: gift.id,
       wishlist_id: gift.wishlist_id,
       buyer_id: user.id,
       quantity: gift.quantity || 1,
       price: gift.cost || null
     });
+    if (error) console.warn(error.message);
   }
+}
 
+async function updateGiftStatus(id, status) {
+  const gift = gifts.find(g => g.id === id);
+  const { error } = await supabase.from("gifts").update({ status }).eq("id", id);
+  if (error) return alert(error.message);
+  if (gift) await syncPurchaseRecord(gift, status);
   await loadGifts();
 }
 
@@ -232,7 +235,7 @@ async function tryAutoFill() {
     if (!res.ok) throw new Error("Could not fetch page.");
     const html = await res.text();
 
-    const getMeta = (prop) => {
+    const getMeta = prop => {
       const patterns = [
         new RegExp(`<meta[^>]+property=["']${prop}["'][^>]+content=["']([^"']+)["']`, "i"),
         new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${prop}["']`, "i"),
@@ -268,7 +271,7 @@ document.getElementById("sort").addEventListener("change", renderGifts);
 document.getElementById("addGiftBtn").addEventListener("click", () => openModal("addGiftModal"));
 document.getElementById("closeAddGift").addEventListener("click", () => closeModal("addGiftModal"));
 document.getElementById("closeEditGift").addEventListener("click", () => closeModal("editGiftModal"));
-document.getElementById("autofillBtn").addEventListener("click", tryAutoFill);
+if (document.getElementById("autofillBtn")) document.getElementById("autofillBtn").addEventListener("click", tryAutoFill);
 
 document.getElementById("settingsBtn").addEventListener("click", async () => {
   if (isOwner) await loadViewers();
@@ -304,7 +307,7 @@ document.getElementById("addGiftForm").addEventListener("submit", async event =>
   document.getElementById("addGiftQty").value = 1;
   document.getElementById("addGiftPriority").value = "N/A";
   document.getElementById("addGiftStatus").value = "Available";
-  document.getElementById("autofillMessage").textContent = "This will try to fill the name, image and price. Some shops may block it.";
+  if (document.getElementById("autofillMessage")) document.getElementById("autofillMessage").textContent = "This will try to fill the name, image and price. Some shops may block it.";
   closeModal("addGiftModal");
   await loadGifts();
 });
@@ -313,19 +316,24 @@ document.getElementById("editGiftForm").addEventListener("submit", async event =
   event.preventDefault();
 
   const id = document.getElementById("editGiftId").value;
+  const originalGift = gifts.find(g => g.id === id);
+  const newStatus = document.getElementById("editGiftStatus").value;
 
-  const { error } = await supabase.from("gifts").update({
+  const updates = {
     name: document.getElementById("editGiftName").value.trim(),
     gift_url: document.getElementById("editGiftUrl").value.trim() || null,
     image_url: document.getElementById("editGiftImage").value.trim() || null,
     cost: document.getElementById("editGiftCost").value || null,
     quantity: Number(document.getElementById("editGiftQty").value || 1),
     priority: document.getElementById("editGiftPriority").value,
-    status: document.getElementById("editGiftStatus").value,
+    status: newStatus,
     notes: document.getElementById("editGiftNotes").value.trim()
-  }).eq("id", id);
+  };
 
+  const { error } = await supabase.from("gifts").update(updates).eq("id", id);
   if (error) return alert(error.message);
+
+  if (originalGift) await syncPurchaseRecord({ ...originalGift, ...updates }, newStatus);
 
   closeModal("editGiftModal");
   await loadGifts();

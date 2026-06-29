@@ -24,3 +24,15 @@ Added:
 - Basic "Try auto-fill from URL" helper in Add Gift.
 
 Auto-fill uses a public fetch helper and may not work on every shop. Fields remain editable.
+
+## v2.5 fixes
+
+Run `supabase-v2-5-update.sql` in Supabase SQL Editor.
+
+Fixes:
+- Full A-Z initial icons.
+- Initial icons are purple letters with a white background.
+- Consistent bottom navigation across pages.
+- Purchase history is created when a gift is marked Purchased from buttons or edit form.
+- Viewer and shared wishlist RPC functions included.
+- Keeps URL auto-fill helper.
