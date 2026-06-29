@@ -4,7 +4,7 @@ import { money, openModal, closeModal } from "./utils.js";
 
 const user = await requireUser();
 const wishlistId = new URLSearchParams(window.location.search).get("id");
-const ICONS = ["gift-purple", "gift-red", "gift-blue", "gift-green", "gift-gold", "gift-pink", "gift-teal", "🐼", "👦", "👧", "🎄", "🎂", "⭐", "🌈", "⚽", "🎮", "📚", "🚗", "🧸", "🦕", "🚀", "❤️", "🌸", "🎵", "🏆", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+const ICONS = ["gift-purple", "gift-red", "gift-blue", "gift-green", "gift-gold", "gift-pink", "gift-teal", "gift-orange", "gift-lime", "gift-sky", "gift-violet", "gift-rose", "🐼", "👦", "👧", "👶", "🧒", "👩", "👨", "🎄", "🎂", "🎈", "🎉", "⭐", "🌈", "❤️", "💜", "🌸", "🌼", "⚽", "🎮", "📚", "🚗", "🚂", "✈️", "🚀", "🦕", "🧸", "🐶", "🐱", "🐾", "🎵", "🎨", "📷", "🛍️", "🏆", "🏖️", "🎯", "🧩", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
 let wishlist = null;
 let gifts = [];
@@ -175,22 +175,26 @@ function renderGifts() {
 }
 
 async function syncPurchaseRecord(gift, status) {
+  await supabase
+    .from("purchases")
+    .delete()
+    .eq("gift_id", gift.id)
+    .eq("buyer_id", user.id);
+
   if (status === "Purchased") {
-    const { error } = await supabase.rpc("record_purchase", {
-      gift_input: gift.id,
-      wishlist_input: gift.wishlist_id,
-      quantity_input: gift.quantity || 1,
-      price_input: gift.cost || null
+    const { error } = await supabase.from("purchases").insert({
+      gift_id: gift.id,
+      wishlist_id: gift.wishlist_id,
+      buyer_id: user.id,
+      quantity: gift.quantity || 1,
+      price: gift.cost || null
     });
-    if (error) alert("Gift marked as purchased, but purchase history could not be saved: " + error.message);
-  } else {
-    const { error } = await supabase.rpc("remove_purchase_record", {
-      gift_input: gift.id
-    });
-    if (error) console.warn(error.message);
+
+    if (error) {
+      alert("Gift marked as purchased, but purchase history could not be saved: " + error.message);
+    }
   }
 }
-
 async function updateGiftStatus(id, status) {
   const gift = gifts.find(g => g.id === id);
   const { error } = await supabase.from("gifts").update({ status }).eq("id", id);
@@ -222,66 +226,11 @@ async function deleteGift(id) {
   await loadGifts();
 }
 
-async function tryAutoFill() {
-  const url = document.getElementById("addGiftUrl").value.trim();
-  const message = document.getElementById("autofillMessage");
-  if (!url) {
-    message.textContent = "Paste a product URL first.";
-    return;
-  }
-
-  message.textContent = "Trying to fetch details...";
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-
-  try {
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-    const res = await fetch(proxyUrl, { signal: controller.signal });
-    clearTimeout(timeout);
-
-    if (!res.ok) throw new Error("Could not fetch page.");
-
-    const html = await res.text();
-
-    const getMeta = prop => {
-      const patterns = [
-        new RegExp(`<meta[^>]+property=["']${prop}["'][^>]+content=["']([^"']+)["']`, "i"),
-        new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${prop}["']`, "i"),
-        new RegExp(`<meta[^>]+name=["']${prop}["'][^>]+content=["']([^"']+)["']`, "i")
-      ];
-      for (const p of patterns) {
-        const m = html.match(p);
-        if (m) return m[1].replace(/&amp;/g, "&").trim();
-      }
-      return "";
-    };
-
-    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-    const title = getMeta("og:title") || (titleMatch ? titleMatch[1].trim() : "");
-    const image = getMeta("og:image") || getMeta("twitter:image");
-    const priceMatch = html.match(/(?:£|GBP\s?)(\d+[\.,]?\d{0,2})/i) || html.match(/"price"\s*:\s*"?([0-9]+\.?[0-9]*)"?/i);
-    const price = priceMatch ? priceMatch[1].replace(",", ".") : "";
-
-    if (title && !document.getElementById("addGiftName").value) document.getElementById("addGiftName").value = title;
-    if (image && !document.getElementById("addGiftImage").value) document.getElementById("addGiftImage").value = image;
-    if (price && !document.getElementById("addGiftCost").value) document.getElementById("addGiftCost").value = price;
-
-    message.textContent = title || image || price
-      ? "Auto-fill added what it could. Please check before saving."
-      : "Could not find useful details. Please enter manually.";
-  } catch (err) {
-    clearTimeout(timeout);
-    message.textContent = "Could not auto-fill this link. Please enter manually.";
-  }
-}
-
 document.getElementById("search").addEventListener("input", renderGifts);
 document.getElementById("sort").addEventListener("change", renderGifts);
 document.getElementById("addGiftBtn").addEventListener("click", () => openModal("addGiftModal"));
 document.getElementById("closeAddGift").addEventListener("click", () => closeModal("addGiftModal"));
 document.getElementById("closeEditGift").addEventListener("click", () => closeModal("editGiftModal"));
-if (document.getElementById("autofillBtn")) document.getElementById("autofillBtn").addEventListener("click", tryAutoFill);
 
 document.getElementById("settingsBtn").addEventListener("click", async () => {
   if (isOwner) await loadViewers();
@@ -317,7 +266,6 @@ document.getElementById("addGiftForm").addEventListener("submit", async event =>
   document.getElementById("addGiftQty").value = 1;
   document.getElementById("addGiftPriority").value = "N/A";
   document.getElementById("addGiftStatus").value = "Available";
-  if (document.getElementById("autofillMessage")) document.getElementById("autofillMessage").textContent = "This will try to fill the name, image and price. Some shops may block it.";
   closeModal("addGiftModal");
   await loadGifts();
 });

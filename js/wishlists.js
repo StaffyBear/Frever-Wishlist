@@ -3,7 +3,7 @@ import { requireUser } from "./auth-core.js";
 import { code, showMessage, openModal, closeModal } from "./utils.js";
 
 const user = await requireUser();
-const ICONS = ["gift-purple", "gift-red", "gift-blue", "gift-green", "gift-gold", "gift-pink", "gift-teal", "🐼", "👦", "👧", "🎄", "🎂", "⭐", "🌈", "⚽", "🎮", "📚", "🚗", "🧸", "🦕", "🚀", "❤️", "🌸", "🎵", "🏆", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+const ICONS = ["gift-purple", "gift-red", "gift-blue", "gift-green", "gift-gold", "gift-pink", "gift-teal", "gift-orange", "gift-lime", "gift-sky", "gift-violet", "gift-rose", "🐼", "👦", "👧", "👶", "🧒", "👩", "👨", "🎄", "🎂", "🎈", "🎉", "⭐", "🌈", "❤️", "💜", "🌸", "🌼", "⚽", "🎮", "📚", "🚗", "🚂", "✈️", "🚀", "🦕", "🧸", "🐶", "🐱", "🐾", "🎵", "🎨", "📷", "🛍️", "🏆", "🏖️", "🎯", "🧩", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
 
 function displayIcon(icon) {

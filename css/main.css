@@ -190,3 +190,15 @@ a{color:inherit;text-decoration:none}.app{width:min(460px,100%);margin:0 auto;mi
   border-radius: 18px;
   padding: 12px;
 }
+
+
+/* v2.8 extra icons */
+.gift-orange { background: #F97316; }
+.gift-lime { background: #84CC16; }
+.gift-sky { background: #0EA5E9; }
+.gift-violet { background: #8B5CF6; }
+.gift-rose { background: #E11D48; }
+
+.icon-picker {
+  grid-template-columns: repeat(5, 1fr);
+}
